@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<title>logzui</title>
+<link rel="icon" href="/favicon.ico" type="image/gif">
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.css">
+</head><body>
+
+<div class="ui main container" style="margin-top:1em">
+
+  <script type="text/html" id="loader_tpl">
+    <div class="ui active inverted dimmer">
+      <div class="ui large text loader">Loading</div>
+    </div>
+  </script>
+
+  <div class="ui form">
+    <div class="fields">
+        <div class="four wide field">
+          <select id="param-env" class="ui fluid dropdown">
+            <option value="prod-qaas">prod-qaas</option>
+            <option value="staging-qaas">staging-qaas</option>
+          </select>
+        </div>
+        <div class="ten wide field">
+          <div class="field">
+            <input type="text" placeholder="search..." value="*" id="param-query">
+          </div>
+        </div>
+        <div class="two wide field">
+          <select id="param-since" class="ui fluid dropdown">
+            <option value="10s">10s</option>
+            <option value="60s" selected="selected">1m</option>
+            <option value="600s">10m</option>
+            <option value="1h">1h</option>
+            <option value="2h">2h</option>
+            <option value="6h">6h</option>
+            <option value="12h">12h</option>
+            <option value="24h">1d</option>
+            <option value="48h">2d</option>
+            <option value="168h">7d</option>
+          </select>
+      </div>
+    </div>
+  </div>
+
+  <br>
+
+  <div id="logs" class="ui two column stackable grid">
+  </div>
+
+  <script type="text/html" id="logs_tpl">
+    <div class="four wide column">
+      <% if (obj.aggregations.tags.buckets.length > 0)  { %>
+      <h4 class="ui header">containers</h4>
+      <div class="ui vertical menu">
+        <% for ( var i = 0; i < obj.aggregations.tags.buckets.length; i++ )  { %>
+          <a class="item">
+            <%= obj.aggregations.tags.buckets[i].key %>
+            <div class="ui label">
+              <%= obj.aggregations.tags.buckets[i].doc_count %>
+            </div>
+          </a>
+        <% } %>
+      </div>
+      <% } %>
+      <% if (obj.aggregations.hosts.buckets.length > 0)  { %>
+      <h4 class="ui header">hosts</h4>
+      <div class="ui vertical menu">
+        <% for ( var i = 0; i < obj.aggregations.hosts.buckets.length; i++ )  { %>
+          <a class="item">
+            <%= obj.aggregations.hosts.buckets[i].key %>
+            <div class="ui label">
+              <%= obj.aggregations.hosts.buckets[i].doc_count %>
+            </div>
+          </a>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="twelve wide column">
+      <div class="ui feed">
+        <% if (obj.hits.length == 0)  { %>
+        <div>
+          No results found.
+        </div>
+        <div class="ui segment">
+          <a href="http://thecatapi.com">
+            <img class="ui centered medium image" target="_cat" src="http://thecatapi.com/api/images/get?format=src&type=gif">
+          </a>
+        </div>
+        <% } else { %>
+
+          <div><%= obj.total %> results</div>
+          <% for ( var i = 0; i < obj.hits.length; i++ )  { %>
+          <div class="event">
+            <div class="content">
+              <div class="summary">
+                <a title="<%= obj.hits[i].t %>">
+                  <%= obj.hits[i].container %>
+                </a> from <a><%= obj.hits[i].s %></a> logged
+                <div class="date" title="<%= obj.hits[i].d %>">
+                  <%= obj.hits[i].fromNow %>
+                </div>
+              </div>
+              <div class="extra images">
+                <div class="ui message">
+                  <%= obj.hits[i].message %>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+        <% } %>
+      </div>
+    </div>
+  </script>
+
+</div>
+
+<!--
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.1.6/zepto.min.js"></script>
+<script src="js/s.js"></script><script>
+-->
+<script src="https://thbkrkr.github.io/s.js/dist/s-19a8f9e.js"></script><script>
+
+function fromNow(timestamp) {
+  return moment(timestamp).add(2, 'hours').fromNow()
+}
+
+function cleanTag(tag) {
+  return tag
+    .replace(/\[[0-9]*\]:/, '')
+    .replace(/\/[0-9a-z]*$/, '')
+    .replace(/docker\//, '')
+}
+
+function cleanMessage(message, query) {
+  message = message
+    .replace(/\[#[0-9]*\[[0-9]*minfo#[0-9]*\[0m\]/g, '')
+    .replace(/|#[0-9]*\[[0-9]*;[0-9]*m/g, '')
+    .replace(/|#[0-9]*\[0m|/g, '')
+
+  if (message.indexOf('level=') != -1) {
+    message = message
+      .replace(/time="[0-9\-:TZ]*"/, '')
+      .replace(/level=info/, 'level=<span style="color:#009688">info</span>')
+      .replace(/level=warning/, 'level=<span style="color:#FF9800">warning</span>')
+      .replace(/level=error/, 'level=<span style="color:#F44336">error</span>')
+  }
+
+  if (query != '*') {
+    var queryRe = new RegExp(query, "gi");
+    message = message
+      .replace(queryRe, '<b style="color:#E91E63">'+query+'</b>')
+  }
+
+  return message
+}
+
+function setParams() {
+  if ($param('e')) {
+    $('#param-env').val($param('e'))
+    $('#param-query').val($param('q'))
+    $('#param-since').val($param('s'))
+  }
+}
+
+function transform(results, paramQuery) {
+  var hits = results.hits
+  for (var i = hits.length - 1; i >= 0; i--) {
+    hits[i].fromNow = fromNow(hits[i].d)
+    hits[i].container = cleanTag(hits[i].t)
+    hits[i].message = cleanMessage(hits[i].m, paramQuery)
+  }
+
+  if (!results.aggregations) {
+    results.aggregations = {}
+  }
+
+  if (!results.aggregations.hosts) {
+    results.aggregations.hosts = { buckets: [] }
+  }
+
+  if (!results.aggregations.tags) {
+    results.aggregations.tags = { buckets: [] }
+  } else {
+    var buckets = results.aggregations.tags.buckets
+    for (var i = buckets.length - 1; i >= 0; i--) {
+      buckets[i].key = cleanTag(buckets[i].key)
+    }
+  }
+  return results
+}
+
+function main() {
+  $('#logs').append($tpl('loader_tpl', {}))
+
+  var paramQuery = $('#param-query').val()
+  var params = $('#param-env').val() + '_' + paramQuery + '_' + $('#param-since').val()
+
+  $get('/api/get?q=' + params, function(results) {
+    // Fail fast
+    if (!results.hits) {
+      $('#logs').html(`<br>
+        <br>
+        <div class="five wide column">
+          Oops. An error occured
+        </div>
+      `)
+      console.error(results)
+      return
+    }
+
+    $('#logs').html($tpl('logs_tpl', transform(results, paramQuery)))
+
+  }, function(err) {
+    $('#logs').html(`<br>
+      <br>
+      <div class="five wide column">
+        Oops. An error occured
+      </div>
+    `)
+    console.error(err)
+  })
+}
+
+function goto() {
+  window.location.href = '?e='+ $('#param-env').val() + '&q='+ $('#param-query').val() + '&s='+ $('#param-since').val()
+}
+
+$('#param-env').on('change', goto)
+$('#param-query').on('change', goto)
+$('#param-since').on('change', goto)
+
+setParams()
+main()
+
+</script></body></html>
