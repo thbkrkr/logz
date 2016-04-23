@@ -1,14 +1,16 @@
-## logszui
+# logz
 
-An small UI to effectively explore the logs.
+A small app to effectively explore data in elasticsearch.
 
-    export LOGS_URL=https://es1.pim:9200
-    export LOGS_USERNAME=super.man
-    export LOGS_PASSWORD=IFEQl7Z998vC58krBocy
+```
+export LOGZ_URL=https://es1.pim:9200
+export LOGZ_USERNAME=super.man
+export LOGZ_PASSWORD=35s4p2t0m154pT5enIcec
 
-    docker run -d \
-      -e URL=${LOGS_URL} \
-      -e USERNAME=${LOGS_USERNAME} \
-      -e PASSWORD=${LOGS_PASSWORD} \
-      -p 80:4242 \
-      krkr/logzui
+docker run -d \
+  -e URL=${LOGZ_ES} \
+  -e LOGZ_USERNAME=${LOGZ_USERNAME} \
+  -e LOGZ_PASSWORD=${LOGZ_PASSWORD} \
+  -p 80:4242 \
+  krkr/logz
+```

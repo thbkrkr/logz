@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    "doo"
+  ],
+  "request": {
+    "from" : 0, "size" : 10,
+    "query": {
+      "bool": {
+        "must": [
+          { "range" : { "timestamp" : { "from" :  "{{since}}" }}},
+          { "query_string": { "query": "{{query}}" }}
+        ]
+      }
+    },
+    "aggs": {
+      "status": { "terms": { "field": "status" }},
+      "cmd":    { "terms": { "field": "cmd" }},
+      "name":   { "terms": { "field": "name" }},
+      "source": { "terms": { "field": "source" }}
+    },
+    "sort": { "timestamp": { "order": "desc" }}
+  }
+}
