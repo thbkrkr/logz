@@ -1,0 +1,112 @@
+<script type="text/html" id="doo_tpl">
+<% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+  <% hit = obj.hits.hits[i]._source;  %>
+  <div class="event">
+    <div class="content">
+
+      <!-- Summary/status -->
+      <div class="summary">
+        <% colors = { OK: 'teal', ERROR: 'red' }; %>
+        <a class="ui <%= colors[hit.status] || 'orange' %> horizontal label"
+           style="min-width:60px; text-align: center">
+          <%= hit.status %>
+        </a>
+        <!-- summary/title -->
+        <a class="long-cmd" title="">
+          <%
+            l = hit['long_cmd'].length;
+          %>
+          <%= hit['long_cmd'].substr(0, 50) + "..." %>
+        </a>
+        from
+        <a><%= hit.source %></a>
+        <!-- summary/fromNow -->
+        <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+          <%= obj.hits.hits[i].fromNow %>
+        </div>
+      </div>
+
+      <!-- Short and full message -->
+      <% if (hit.message == '') {
+        hit.message = '<i>(empty)</i>';
+        hit.fullMessage = '<i>(empty)</i>'
+      } %>
+      <div class="extra images">
+        <div class="ui short message">
+          <%= hit.message %>
+        </div>
+        <div class="ui full message" style="display:none">
+          <%= hit.fullMessage %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+</script> <script>
+
+function sanitize(text) {
+  return text
+    .replace(/\[[0-9]*\]:/, '')
+    .replace(/\/[0-9a-z]*$/, '')
+    .replace(/docker\//, '')
+}
+
+function cleanMessage(message, query) {
+  message = message
+    .replace(/\[#[0-9]*\[[0-9]*minfo#[0-9]*\[0m\]/g, '')
+    .replace(/|#[0-9]*\[[0-9]*;[0-9]*m/g, '')
+    .replace(/|#[0-9]*\[0m|/g, '')
+
+  if (message.indexOf('level=') != -1) {
+    message = message
+      .replace(/time="[0-9\-:TZ]*"/, '')
+      .replace(/level=info/, 'level=<span style="color:#009688">info</span>')
+      .replace(/level=warning/, 'level=<span style="color:#FF9800">warning</span>')
+      .replace(/level=error/, 'level=<span style="color:#F44336">error</span>')
+  }
+
+  // Highlight query words
+  if (query != '*') {
+    query.split(' ').forEach(function(word) {
+      word = word.replace(/\*/g)
+      var wordRe = new RegExp(word, "gi");
+      message = message
+        .replace(wordRe, '<b style="color:#E91E63">'+word+'</b>')
+    })
+  }
+
+  return message
+}
+
+function transform(results, paramQuery) {
+  var hits = results.hits.hits
+
+  // Inject fromNow using the _source.timestamp field
+  for (var i = hits.length - 1; i >= 0; i--) {
+    results.hits.hits[i].fromNow = $fromNow(hits[i]._source.timestamp)
+
+    // Clean tags FIXME!
+    if (hits[i]._source.tag) {
+      results.hits.hits[i]._source.tag = sanitize(hits[i]._source.tag)
+    }
+
+    if (hits[i]._source.message) {
+      message = cleanMessage(hits[i]._source.message, paramQuery)
+      results.hits.hits[i]._source.fullMessage = message
+      lines = message.split('<br>')
+      results.hits.hits[i]._source.message = lines[lines.length-2]
+    }
+  }
+
+  // Clean aggreation buckets key
+  for (var aggregationKey in results.aggregations) {
+    var buckets = results.aggregations[aggregationKey].buckets
+    for (var i = buckets.length - 1; i >= 0; i--) {
+      results.aggregations[aggregationKey].buckets[i].key = sanitize(buckets[i].key)
+    }
+  }
+  return results
+}
+
+</script>

@@ -1,0 +1,17 @@
+<script type="text/html" id="loader_tpl">
+  <div class="ui active inverted dimmer">
+    <div class="ui large text loader"></div>
+  </div>
+</script>
+
+<script type="text/html" id="indexes_tpl">
+  <% for ( var i = 0; i < obj.indexes.length; i++ )  { %>
+    <option value="<%= obj.indexes[i] %>"><%= obj.indexes[i] %></option>
+  <% } %>
+</script>
+
+<script type="text/html" id="time_window_tpl">
+  <% for ( var i = 0; i < obj.options.length; i++ )  { %>
+    <option value="<%= obj.options[i].value %>"><%= obj.options[i].text %></option>
+  <% } %>
+</script>

@@ -1,0 +1,24 @@
+{
+  "indexes": [
+    "prod-qaas",
+    "staging-qaas",
+    "qaas-marathon"
+  ],
+  "request": {
+    "from" : 0, "size" : 10,
+    "query": {
+      "bool": {
+        "must": [
+          { "range" : { "timestamp" : { "from" :  "{{from}}" }}},
+          { "term": { "program": "docker" }},
+          { "query_string": { "query": "{{query}}" }}
+        ]
+      }
+    },
+    "aggs": {
+      "tags":  { "terms": { "field": "tag" }},
+      "hosts": { "terms": { "field": "source" }}
+    },
+    "sort": { "timestamp": { "order": "desc" }}
+  }
+}

@@ -1,0 +1,52 @@
+<style>
+  .aggreg-filter { cursor: pointer; }
+  .aggreg-title { margin-bottom: 0.5em; }
+  .aggreg-item { padding: .5em 0; font-size: .8em; color: rgba(0,0,0,.5); }
+  .reset-zone { cursor: pointer; }
+  span.reset > .undo { float: right; }
+  .duration { font-size: .8em; margin: 0 0 0 .3em; color: rgba(0,0,0,.4); }
+</style>
+
+<script type="text/html" id="aggregs_tpl">
+  <!-- Aggregs -->
+  <% for ( var aggregationKey in obj.aggregations )  { %>
+    <% if (obj.aggregations[aggregationKey].buckets.length > 0)  { %>
+    <div class="ui segment aggreg">
+      <div class="ui middle aligned list">
+
+        <!-- Reset button -->
+        <div class="item">
+          <div class="right floated content reset-zone">
+            <span class="reset" key="<%= aggregationKey %>">
+              <% if (obj.filters.term[aggregationKey]) { %>
+              <i class="teal undo icon"></i>
+              <% } %>
+            </span>
+          </div>
+          <div class="content aggreg-title">
+            <%= aggregationKey %>
+          </div>
+        </div>
+
+        <% for ( var i = 0; i < obj.aggregations[aggregationKey].buckets.length; i++ )  { %>
+        <div class="item aggreg-filter filter"
+            key="<%= aggregationKey %>"
+            name="<%= obj.aggregations[aggregationKey].buckets[i].key %>">
+          <div class="right floated content">
+            <div class="small ui label">
+              <%= obj.aggregations[aggregationKey].buckets[i].doc_count %>
+            </div>
+          </div>
+          <div class="content">
+            <span class="aggreg-item">
+              <%= obj.aggregations[aggregationKey].buckets[i].key %>
+            </span>
+          </div>
+        </div>
+        <% } %>
+
+      </div>
+    </div>
+    <% } %>
+  <% } %>
+</div>

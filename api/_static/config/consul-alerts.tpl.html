@@ -1,0 +1,29 @@
+<script type="text/html" id="consul-alerts_tpl">
+  <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+    <div class="event">
+      <div class="content">
+        <div class="summary">
+          <!-- summary/status -->
+          <% if (obj.hits.hits[i]._source.message_type == 'passing') {
+            color = 'green'
+          } else {
+            color = 'red'
+          } %>
+          <a class="ui <%= color %> horizontal label" style="min-width:60px; text-align: center">
+            <%= obj.hits.hits[i]._source.entity_id %>
+          </a>
+          <!-- summary/fromNow -->
+          <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+            <%= obj.hits.hits[i].fromNow %>
+          </div>
+        </div>
+        <div class="extra images">
+          <div class="ui short message">
+            <!-- message -->
+            <%= JSON.stringify(obj.hits.hits[i]._source.state_message) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</script>

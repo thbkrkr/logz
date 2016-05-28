@@ -1,0 +1,29 @@
+<script type="text/html" id="ogl_tpl">
+<% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+  <% hit = obj.hits.hits[i]._source;  %>
+  <div class="event">
+    <div class="content">
+      <div class="summary">
+        <!-- summary/title -->
+        <a><%= obj.hits.hits[i]._source['tag'] %></a>
+        from
+        <a><%= obj.hits.hits[i]._source.source %></a>
+        <!-- summary/fromNow -->
+        <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+          <%= obj.hits.hits[i].fromNow %>
+        </div>
+      </div>
+      <div class="extra images">
+        <div class="ui short message">
+          <!-- message -->
+          <%= obj.hits.hits[i]._source.fullMessage %>
+        </div>
+        <div class="ui full message" style="display:none">
+          <!-- message -->
+          <%= obj.hits.hits[i]._source.fullMessage %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+</script>

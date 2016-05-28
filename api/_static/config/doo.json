@@ -7,7 +7,7 @@
     "query": {
       "bool": {
         "must": [
-          { "range" : { "timestamp" : { "from" :  "{{since}}" }}},
+          { "range" : { "timestamp" : { "from" :  "{{from}}" }}},
           { "query_string": { "query": "{{query}}" }}
         ]
       }

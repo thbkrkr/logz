@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    "consul"
+  ],
+  "request": {
+    "from" : 0, "size" : 10,
+    "query": {
+      "bool": {
+        "must": [
+          { "range" : { "timestamp" : { "from" :  "{{from}}" }}},
+          { "query_string": { "query": "{{query}}" }}
+        ]
+      }
+    },
+    "aggs": {
+      "entity_id":    { "terms": { "field": "entity_id" }},
+      "message_type": { "terms": { "field": "message_type" }}
+    },
+    "sort": { "timestamp": { "order": "desc" }}
+  }
+}

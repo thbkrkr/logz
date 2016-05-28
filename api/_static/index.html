@@ -1,294 +1,156 @@
 <!doctype html>
-<html>
-<head>
-<title>logzui</title>
-<link rel="icon" href="/favicon.ico" type="image/gif">
-<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.css">
-</head><body>
+<html><head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>logz</title>
+<link rel="icon" href="/s/favicon.ico" type="image/gif">
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.css"></head><body>
 
-<style>
-.duration {
-  font-size: .85714286em;
-  margin: 0 0 0 .3em;
-  color: rgba(0,0,0,.4);
-}
-.reset-zone {
-  cursor: pointer;
-}
-.undo {
-  color: #8BC34A;
-  float: right;
-}
-</style>
+<div class="ui main container">
 
-<div class="ui main container" style="margin-top:1em">
-
-  <script type="text/html" id="loader_tpl">
-    <div class="ui active inverted dimmer">
-      <div class="ui large text loader">Loading</div>
-    </div>
-  </script>
-
-  <div class="ui form">
+  <div class="ui form" style="margin-top:1em; margin-bottom:1em;">
     <div class="fields">
         <div class="four wide field">
-          <select id="param-index" class="ui fluid dropdown refresh">
+          <select id="param-index" class="ui fluid dropdown refresh tpl">
           </select>
-          <script type="text/html" id="indexes_tpl">
-            <% for ( var i = 0; i < obj.indexes.length; i++ )  { %>
-              <option value="<%= obj.indexes[i] %>"><%= obj.indexes[i] %></option>
-            <% } %>
-          </script>
         </div>
         <div class="ten wide field">
           <div class="field">
-            <input type="text" placeholder="search..." value="*" id="param-query" class="refresh">
+            <input type="text" placeholder="search..." value="" id="param-query" class="refresh">
           </div>
         </div>
         <div class="two wide field">
-          <select id="param-since" class="ui fluid dropdown refresh">
-            <option value="10">10s</option>
-            <option value="60" selected="selected">1m</option>
-            <option value="600">10m</option>
-            <option value="3600">1h</option>
-            <option value="7200">2h</option>
-            <option value="21600">6h</option>
-            <option value="43200">12h</option>
-            <option value="86400">1d</option>
-            <option value="172800">2d</option>
-            <option value="604800">7d</option>
+          <select id="param-since" class="ui fluid dropdown refresh tpl">
           </select>
       </div>
     </div>
   </div>
 
-  <br>
-
-  <div id="logs" class="ui two column stackable grid">
-  </div>
-
-  <script type="text/html" id="logs_tpl">
-    <div class="four wide column">
-      <!-- Aggregs -->
-      <% for ( var aggregationKey in obj.aggregations )  { %>
-        <% if (obj.aggregations[aggregationKey].buckets.length > 0)  { %>
-        <div class="ui vertical menu">
-          <div class="item reset-zone">
-            <span class="reset" key="<%= aggregationKey %>">
-              <%= aggregationKey %>
-              <% if (obj.filters.term[aggregationKey]) { %>
-              <i class="undo icon"></i>
-              <% } %>
-            </span>
-            <% for ( var i = 0; i < obj.aggregations[aggregationKey].buckets.length; i++ )  { %>
-              <div class="menu">
-                <a class="item filter"
-                  key="<%= aggregationKey %>"
-                  name="<%= obj.aggregations[aggregationKey].buckets[i].key %>">
-                  <%= obj.aggregations[aggregationKey].buckets[i].key %>
-                  <div class="ui label">
-                    <%= obj.aggregations[aggregationKey].buckets[i].doc_count %>
-                  </div>
-                </a>
-              </div>
-            <% } %>
-          </div>
-        </div>
-        <% } %>
-      <% } %>
-    </div>
-
+  <div class="ui two column stackable grid">
+    <div id="aggregs" class="four wide column tpl" style="padding-right: 0;"></div>
     <div class="twelve wide column">
-      <div class="ui feed">
-        <% if (obj.hits.hits.length == 0)  { %>
-        <div>
-          No results found.
-        </div>
-        <div class="ui segment">
-          <a href="http://thecatapi.com">
-            <img class="ui centered medium image" target="_cat"
-              src="http://thecatapi.com/api/images/get?format=src&type=gif">
-          </a>
-        </div>
-        <% } else { %>
-          <div>
-            <%= obj.hits.total %> results <span class="duration">in <%= obj.duration %>s<span>
-          </div>
-          <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
-            <div class="event">
-              <div class="content">
-                <div class="summary">
-                  <!-- summary/status -->
-                  <% if (obj.hits.hits[i]._source.status == 'OK') {
-                    color = 'teal'
-                  } else {
-                    color = 'red'
-                  } %>
-                  <a class="ui <%= color %> horizontal label" style="min-width:60px; text-align: center">
-                    <%= obj.hits.hits[i]._source.status %>
-                  </a>
-                  <!-- summary/title -->
-                  <a><%= obj.hits.hits[i]._source['long_cmd'] %></a>
-                  from
-                  <a><%= obj.hits.hits[i]._source.source %></a>
-                  <!-- summary/fromNow -->
-                  <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
-                    <%= obj.hits.hits[i].fromNow %>
-                  </div>
-                </div>
-                <div class="extra images">
-                  <div class="ui short message">
-                    <!-- message -->
-                    <%= obj.hits.hits[i]._source.message %>
-                  </div>
-                  <div class="ui full message" style="display:none">
-                    <!-- message -->
-                    <%= obj.hits.hits[i]._source.fullMessage %>
-                  </div>
-                </div>
-              </div>
-            </div>
-          <% } %>
-
-        <% } %>
-      </div>
+      <div id="feed" class="ui feed tpl" style="min-height:300px"></div>
     </div>
-  </script>
+  </div>
 
 </div>
 
-<script src="https://thbkrkr.github.io/s.js/dist/s.2.db65b41.js"></script><script>
+<script src="https://thbkrkr.github.io/s.js/dist/s.7.f5b592a.zm.js"></script>
+<script>
 
-function fromNow(timestamp) {
-  var hours = 0
-  return moment.unix(timestamp).add(hours, 'hours').fromNow()
+v = new Date().getTime()
+
+name = $lsGet('name') || 'doo'
+$lsSet('name', name)
+
+$loadTpls([
+  '/s/tpl/common.tpl.html',
+  '/s/tpl/aggregs.tpl.html',
+  '/s/tpl/feed.tpl.html',
+  '/s/config/'+name+'.tpl.html'
+], init)
+
+sinceOptions = [
+  {'text': '10s', 'value': 10},
+  {'text': '1m',  'value': 60},
+  {'text': '10m', 'value': 600},
+  {'text': '1h',  'value': 3600},
+  {'text': '2h',  'value': 7200},
+  {'text': '6h',  'value': 21600},
+  {'text': '12h', 'value': 43200},
+  {'text': '1d',  'value': 86400},
+  {'text': '2d',  'value': 172800},
+  {'text': '1w',  'value': 604800},
+  {'text': '1m',  'value': 2629744},
+  {'text': '1y',  'value': 31556926}
+]
+
+function init() {
+  $('.refresh').on('change', refresh)
+  refresh(true)
 }
 
-function cleanTag(tag) {
-  return tag
-    .replace(/\[[0-9]*\]:/, '')
-    .replace(/\/[0-9a-z]*$/, '')
-    .replace(/docker\//, '')
+function refresh(init) {
+  if (init === true) {
+    $get('/s/config/' + name + '.json', function(config) {
+      // Store the request
+      $lsSet('requestTpl', config.request)
+
+      // Setup index and time window <select> elements
+      $('#param-index').html($tpl('indexes_tpl', config))
+      $('#param-since').html($tpl('time_window_tpl', {options: sinceOptions}))
+
+      // Set/Get param fields
+      if ($lsGet('index')) {
+        $('#param-index').val($lsGet('index'))
+        $('#param-query').val($lsGet('query'))
+        $('#param-since').val($lsGet('since'))
+      } else {
+        $('#param-since').val('86400')
+      }
+
+      search()
+    })
+
+  } else {
+    search()
+  }
 }
 
-function cleanMessage(message, query) {
-  message = message
-    .replace(/\[#[0-9]*\[[0-9]*minfo#[0-9]*\[0m\]/g, '')
-    .replace(/|#[0-9]*\[[0-9]*;[0-9]*m/g, '')
-    .replace(/|#[0-9]*\[0m|/g, '')
+function search() {
+  var start = new Date().getTime()
 
-  if (message.indexOf('level=') != -1) {
-    message = message
-      .replace(/time="[0-9\-:TZ]*"/, '')
-      .replace(/level=info/, 'level=<span style="color:#009688">info</span>')
-      .replace(/level=warning/, 'level=<span style="color:#FF9800">warning</span>')
-      .replace(/level=error/, 'level=<span style="color:#F44336">error</span>')
+  // Store params
+  $lsSet('index', $('#param-index').val())
+  $lsSet('query', $('#param-query').val())
+  $lsSet('since', $('#param-since').val())
+
+  // Display loader
+  $('#feed').html($tpl('loader_tpl', {}))
+
+  // Prepare the request
+  var query = $lsGet('query') || '*'
+  var from = moment().subtract($lsGet('since'), 'seconds').unix()
+  request = JSON.parse(JSON.stringify($lsGet('requestTpl')).
+    replace('{{query}}', query).
+    replace('{{from}}', from))
+
+  // Add query filters to the request
+  var filters = $lsGet('filters') || { term: {} }
+  for ( var field in filters.term ) {
+    queryFilter = { term: {} }
+    queryFilter.term[field] = filters.term[field]
+    request.query.bool.must.push(queryFilter)
   }
 
-  if (query != '*') {
-    query = query.replace(/\*/g)
-    var queryRe = new RegExp(query, "gi");
-    message = message
-      .replace(queryRe, '<b style="color:#E91E63">'+query+'</b>')
-  }
+  // Do the search request
+  $post('/api/search', {
+    index: $lsGet('index'),
+    request: request
+  }, function(response) {
+    // Fail fast
+    if (!response.hits) { error(response); return; }
 
-  return message
-}
+    // Transform the results
+    var results = transform(response, query)
+    results.filters = filters
+    results.duration = (new Date().getTime() - start) / 1000
 
-function transform(results, paramQuery) {
-  var hits = results.hits.hits
+    // Display results
+    $('#aggregs').html($tpl('aggregs_tpl', results))
+    $('#feed').html($tpl('feed_tpl', results))
+    $('#feed').append($tpl(name + '_tpl', results))
 
-  // Inject fromNow using the _source.timestamp field
-  for (var i = hits.length - 1; i >= 0; i--) {
-    results.hits.hits[i].fromNow = fromNow(hits[i]._source.timestamp)
+    bindClicks()
 
-    // FIXME!
-    if (hits[i]._source.tag) {
-      results.hits.hits[i]._source.tag = cleanTag(hits[i]._source.tag)
-    }
-    if (hits[i]._source.message) {
-      message = cleanMessage(hits[i]._source.message, paramQuery)
-      results.hits.hits[i]._source.fullMessage = message
-      lines = message.split('<br>')
-      results.hits.hits[i]._source.message = lines[lines.length-2]
-    }
-  }
-
-  // Clean aggreation buckets key
-  for (var aggregationKey in results.aggregations) {
-    var buckets = results.aggregations[aggregationKey].buckets
-    for (var i = buckets.length - 1; i >= 0; i--) {
-      results.aggregations[aggregationKey].buckets[i].key = cleanTag(buckets[i].key)
-    }
-  }
-  return results
-}
-
-// ---
-
-function error() {
-  $('#logs').html(`<br><br>
-    <div class="five wide column">
-      Oops. An error occured.
-    </div>
-  `)
-}
-
-function config(onSuccess) {
-  // Get and display indexes select
-  $get('/s/config/config.json', function(config) {
-    $('#param-index').append($tpl('indexes_tpl', config))
-    onSuccess(config)
+  }, function(err) {
+    error()
   })
 }
 
-function since(duration) {
-  return moment().subtract(duration, 'seconds').unix()
-}
-
-function search(request) {
-  // Display loader
-  $('#logs').append($tpl('loader_tpl', {}))
-
-  // Get and display search results
-  var start = new Date().getTime()
-  var paramQuery = $lsGet('query')
-  if (paramQuery == '') paramQuery = '*'
-
-  // Inject filters in the request
-  var filters = $lsGet('filters')
-  if (!filters) {
-    filters = { term: {} }
-  } else {
-    for ( var field in filters.term ) {
-      var value = filters.term[field]
-      filter = { term: {} }
-      filter.term[field] = value
-      request.query.bool.must.push(filter)
-    }
-  }
-
-  $post('/api/search', {
-    var: {
-      index: $lsGet('index'),
-      query: paramQuery,
-      since: since($lsGet('since')),
-    },
-    request: request
-  }, function(results) {
-    // Fail fast
-    if (!results.hits) {
-      error(); return
-    }
-
-    var obj = transform(results, paramQuery)
-    obj.duration = (new Date().getTime() - start) / 1000
-
-    obj.filters = filters
-
-    $('#logs').html($tpl('logs_tpl', obj))
-
-    // Toggle message on click - lock/unlock toggle by pressing 'e'
+function bindClicks() {
+   // Toggle message on click - lock/unlock toggle by pressing 'e'
     var expandMode = true
     $('.message').css('cursor', 'all-scroll')
     $('body').bind('keypress', function(event) {
@@ -314,7 +176,7 @@ function search(request) {
       }
     })
 
-    // Aggregs filtering
+    // Bind click handler for aggregations filtering
     $('.filter').on('click', function(el) {
       var filters = $lsGet('filters')
       if (!filters) filters = { term: {} }
@@ -323,6 +185,7 @@ function search(request) {
       refresh()
     })
 
+    // Bind click handler to reset filters
     $('.reset').on('click', function(el) {
       var filters = $lsGet('filters')
       //if (!filters) filters = { term: {} }
@@ -330,36 +193,16 @@ function search(request) {
       $lsSet('filters', filters)
       refresh()
     })
-
-  }, function(err) {
-    error()
-  })
 }
 
-function refresh(init) {
-  config(function(c) {
-    if (init === true) {
-      if ($lsGet('index')) {
-        $('#param-index').val($lsGet('index'))
-        $('#param-query').val($lsGet('query'))
-        $('#param-since').val($lsGet('since'))
-      }
-    }
-    $lsSet('index', $('#param-index').val())
-    $lsSet('query', $('#param-query').val())
-    $lsSet('since', $('#param-since').val())
-
-    search(c.request)
-  })
+function error(error) {
+  $('#feed').html(`
+    <div class="ui negative message">
+      Oops. An error occurred.
+      <br>
+      <pre style="font-size:0.7em">`+JSON.stringify(error, null, 1)+`</pre>
+    </div>
+  `)
 }
-
-function initListeners() {
-  $('.refresh').on('change', refresh)
-}
-
-initListeners()
-refresh(true)
-
-//setInterval(1000, refresh)
 
 </script></body></html>
