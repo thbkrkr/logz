@@ -14,7 +14,8 @@
     },
     "aggs": {
       "entity_id":    { "terms": { "field": "entity_id" }},
-      "message_type": { "terms": { "field": "message_type" }}
+      "message_type": { "terms": { "field": "message_type" }},
+      "histogram":  { "date_histogram": { "field":"timestamp","interval":"{{interval}}" }}
     },
     "sort": { "timestamp": { "order": "desc" }}
   }

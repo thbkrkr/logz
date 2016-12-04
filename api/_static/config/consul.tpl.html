@@ -1,13 +1,13 @@
-<script type="text/html" id="consul-alerts_tpl">
+<script type="text/html" id="consul_tpl">
   <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
     <div class="event">
       <div class="content">
         <div class="summary">
           <!-- summary/status -->
           <% if (obj.hits.hits[i]._source.message_type == 'passing') {
-            color = 'green'
+            color = 'teal'
           } else {
-            color = 'red'
+            color = 'pink'
           } %>
           <a class="ui <%= color %> horizontal label" style="min-width:60px; text-align: center">
             <%= obj.hits.hits[i]._source.entity_id %>
@@ -18,12 +18,22 @@
           </div>
         </div>
         <div class="extra images">
-          <div class="ui short message">
+          <div class="ui sxhort message">
             <!-- message -->
-            <%= JSON.stringify(obj.hits.hits[i]._source.state_message) %>
+            <%= obj.hits.hits[i]._source.state_message %>
           </div>
         </div>
       </div>
     </div>
   <% } %>
+</script> <script>
+
+function queryFrom() {
+  return moment().subtract(since, 'seconds').unix()
+}
+
+function fromNow(obj) {
+  return $fromNow(obj.timestamp)
+}
+
 </script>
