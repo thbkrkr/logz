@@ -1,0 +1,92 @@
+<script type="text/html" id="tasks_tpl">
+  <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+    <div class="event">
+      <div class="content">
+        <div class="summary"">
+          <!-- status -->
+          <% if (obj.hits.hits[i]._source.task_status == 'Closed') {
+            color = 'green'
+          } else if (obj.hits.hits[i]._source.task_status == 'In progress') {
+            color = 'cyan'
+          } else {
+            color = 'orange'
+          } %>
+          <a class="ui <%= color %> horizontal label" style="min-width:100px" href="http://travaux.ovh.net/?do=details&id=<%= obj.hits.hits[i]._source.task_id %>" target="_task">
+            <%= obj.hits.hits[i]._source.task_status %>
+          </a>
+
+          <!-- type -->
+          <% if (obj.hits.hits[i]._source.task_tasktype == 'Incident') {
+            color = 'pink'
+          } else {
+            color = 'blue'
+          } %>
+          <a class="ui <%= color %> horizontal label" style="min-width:100px">
+          <%= obj.hits.hits[i]._source.task_tasktype %>
+          </a>
+
+          <a class="ui teal horizontal label">
+          <%= obj.hits.hits[i]._source.task_project %>
+          </a>
+
+          <a class="ui gray horizontal label">
+          <%= obj.hits.hits[i]._source.task_category %>
+          </a>
+
+          <!-- fromNow -->
+          <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+          <%= obj.hits.hits[i]._source.task_lastedit %>
+          , <%= obj.hits.hits[i].fromNow %>
+          </div>
+
+        </div>
+        <div class="extra images">
+          <div class="ui short message">
+            <%= obj.hits.hits[i]._source.task_summary %>
+          </div>
+          <div class="ui full message" style="display:none">
+          <%= obj.hits.hits[i]._source.message %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</script>
+<style>
+.ui.message {
+  padding: 0.7em 1em;
+}
+</style>
+<script>
+
+function queryFrom(obj) {
+  return moment().subtract($lsGet('since'), 'seconds').format('YYYY-MM-DD, HH:mm')
+}
+
+function fromNow(obj) {
+  return moment(obj.task_lastedit, 'YYYY-MM-DD, HH:mm').fromNow()
+}
+
+function sanitizeText(text) {
+  // snif: fix pup parsing
+  return text
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/â€¢/g, '•')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ã/g, 'a')
+}
+
+function translateAggregName(name) {
+  return name
+    .replace(/^[0-9]_/, '')
+}
+
+function sanitizeMessage(message) {
+  return message
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/Ã¨/g, 'è')
+}
+
+</script>

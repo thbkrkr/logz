@@ -1,0 +1,24 @@
+{
+  "indexes": [
+    "tasks"
+  ],
+  "request": {
+    "from" : 0, "size" : 11,
+    "query": {
+      "bool": {
+        "must": [
+          { "range" : { "task_lastedit" : { "from" :  "{{from}}" }}},
+          { "query_string": { "query": "{{query}}" }}
+        ]
+      }
+    },
+    "aggs": {
+      "1_Type": { "terms": { "field": "task_tasktype" }},
+      "2_Status":   { "terms": { "field": "task_status" }},
+      "3_Category": { "terms": { "field": "task_category" }},
+      "4_Project":  { "terms": { "field": "task_project" }},
+      "histogram":  { "date_histogram": { "field":"task_lastedit","interval":"{{interval}}" }}
+    },
+    "sort": { "task_lastedit": { "order": "desc" }}
+  }
+}
