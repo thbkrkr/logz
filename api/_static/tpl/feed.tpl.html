@@ -11,25 +11,26 @@
 </script>
 
 <script type="text/html" id="feed_tpl">
-  <!-- Filters and summary -->
-  <% if (Object.keys(obj.filters.term).length == 0)  { %>
-    <div class="ui segment">
-      <%= obj.hits.total %> results <span class="duration">in <%= obj.duration %>s</span>
-    </div>
-  <% } else { %>
   <div class="ui segment">
-    <span>
-      <% for ( var key in obj.filters.term )  { %>
-        <button class="tiny ui basic button reset" key="<%= key %>">
-          <i class="undo icon"></i><%= key + ': ' + obj.filters.term[key] %>
-        </button>
-      <% } %>
-    </span>
-    <div class="tiny ui right floated basic button">
-      <%= obj.hits.total %> results <span class="duration">in <%= obj.duration %>s</span>
+    <div id="histogram">
     </div>
+
+    <!-- Filters and summary -->
+    <% if (Object.keys(obj.filters.term).length == 0)  { %>
+      <%= obj.hits.total %> results <span class="duration">in <%= obj.duration %>s</span>
+    <% } else { %>
+      <span>
+        <% for ( var key in obj.filters.term )  { %>
+          <button class="tiny ui basic button reset" key="<%= key %>">
+            <i class="undo icon"></i><%= key + ': ' + obj.filters.term[key] %>
+          </button>
+        <% } %>
+      </span>
+      <div class="tiny ui right floated basic button">
+        <%= obj.hits.total %> results <span class="duration">in <%= obj.duration %>s</span>
+      </div>
+    <% } %>
   </div>
-  <% } %>
 
   <!-- No result -->
   <% if (obj.hits.hits.length == 0)  { %>
@@ -37,11 +38,12 @@
     No results found.
   </div>
   <div class="ui segment">
-    <a href="http://thecatapi.com">
+    <a href="https://thecatapi.com">
       <img class="ui centered medium image" target="_cat"
-        src="http://thecatapi.com/api/images/get?format=src&type=gif">
+        src="https://thecatapi.com/api/images/get?format=src&type=gif">
     </a>
   </div>
+
   <!-- Hits -->
   <% } else { %>
     <div id="hits" class="tpl"></div>

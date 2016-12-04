@@ -36,13 +36,18 @@
 
 </div>
 
-<script src="https://thbkrkr.github.io/s.js/dist/s.7.f5b592a.zm.js"></script>
+<script src="//thbkrkr.github.io/s.js/dist/s.7.f5b592a.zm.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
 <script>
 
 v = new Date().getTime()
 
-name = $lsGet('name') || 'doo'
+name = $param('name') || $lsGet('name')
 $lsSet('name', name)
+
+if ($lsGet('name') == 'null') {
+  error("name is not defined -> ?name=<name>")
+}
 
 $loadTpls([
   '/s/tpl/common.tpl.html',
@@ -61,9 +66,10 @@ sinceOptions = [
   {'text': '12h', 'value': 43200},
   {'text': '1d',  'value': 86400},
   {'text': '2d',  'value': 172800},
-  {'text': '1w',  'value': 604800},
-  {'text': '1m',  'value': 2629744},
-  {'text': '1y',  'value': 31556926}
+  {'text': '1 week',  'value': 604800},
+  {'text': '1 month',  'value': 2629744},
+  {'text': '2 months',  'value': 5259488},
+  {'text': '1 year',  'value': 31556926}
 ]
 
 function init() {
@@ -85,9 +91,9 @@ function refresh(init) {
       if ($lsGet('index')) {
         $('#param-index').val($lsGet('index'))
         $('#param-query').val($lsGet('query'))
-        $('#param-since').val($lsGet('since'))
+        $('#param-since').val($param('since') || $lsGet('since'))
       } else {
-        $('#param-since').val('86400')
+        $('#param-since').val($param('since') ||'86400')
       }
 
       search()
@@ -98,6 +104,7 @@ function refresh(init) {
   }
 }
 
+// Use queryFrom() & transform() (=> fromNow(), sanitizeText(), sanitizeMessage())
 function search() {
   var start = new Date().getTime()
 
@@ -111,16 +118,40 @@ function search() {
 
   // Prepare the request
   var query = $lsGet('query') || '*'
-  var from = moment().subtract($lsGet('since'), 'seconds').unix()
+
+  since = $('#param-since').val()
+  interval = 'hour'
+  if (since <= 6*7200) { // 6h
+    interval = 'minute'
+  }
+  if (since > 4*86400) { // 6d
+    interval = 'day'
+  }
+
   request = JSON.parse(JSON.stringify($lsGet('requestTpl')).
+    replace('{{interval}}', interval).
     replace('{{query}}', query).
-    replace('{{from}}', from))
+    replace('{{from}}', queryFrom()))
 
   // Add query filters to the request
   var filters = $lsGet('filters') || { term: {} }
+
+  // Get translate aggregs name index
+  var tmp = {}
+  for ( var a in request.aggs ) {
+    if (request.aggs[a].terms) {
+      x = a
+      if (typeof(translateAggregName) === 'function') {
+        x = translateAggregName(a)
+      }
+      tmp[x] = request.aggs[a].terms.field
+    }
+  }
+
   for ( var field in filters.term ) {
+    realField = tmp[field]
     queryFilter = { term: {} }
-    queryFilter.term[field] = filters.term[field]
+    queryFilter.term[realField] = filters.term[field]
     request.query.bool.must.push(queryFilter)
   }
 
@@ -142,58 +173,229 @@ function search() {
     $('#feed').html($tpl('feed_tpl', results))
     $('#feed').append($tpl(name + '_tpl', results))
 
-    bindClicks()
+    makeGraph(results.histogram)
+
+    bindKeypress()
 
   }, function(err) {
     error()
   })
 }
 
-function bindClicks() {
-   // Toggle message on click - lock/unlock toggle by pressing 'e'
-    var expandMode = true
-    $('.message').css('cursor', 'all-scroll')
-    $('body').bind('keypress', function(event) {
-        if (event.which == 101) { // e
-          if (expandMode) {
-            $('.message').css('cursor', '')
-          } else {
-            $('.message').css('cursor', 'all-scroll')
+function makeGraph(histogram) {
+  if (!histogram) {
+    return
+  }
+
+  $('#histogram').html('<canvas id="date_histogram" width="800" height="100"></canvas>')
+
+  labels = []
+  data = []
+  nb = histogram.buckets.length
+  for (var i = 0; i < nb; i++) {
+    labels.push(histogram.buckets[i].key)
+    data.push(histogram.buckets[i].doc_count)
+  }
+
+  unit = 'hour'
+  since = $('#param-since').val()
+  if (since <= 7200) { // 2h
+    unit = 'minute'
+  }
+  if (since > 86400) { // 1d
+    unit = 'day'
+  }
+  if (since > 2629744) { // 1m
+    unit = 'week'
+  }
+  if (since > 2*2629744) { // 2m
+    unit = 'week'
+  }
+
+  var myChart = new Chart($('#date_histogram'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor:
+            'rgba(54, 162, 235, 0.2)'
+        ,
+        borderColor:
+            'rgba(54, 162, 235, 1)'
+        ,
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      tooltips: {
+        enabled: false
+      },
+      legend: {
+        display: false
+      },
+      scales: {
+        yAxes: [{
+            ticks: {
+                beginAtZero:false
+            }
+        }],
+        xAxes: [{
+            ticks: {
+                beginAtZero:false
+            },
+          type: 'time',
+          time: {
+            unit: unit,
+            displayFormats: {
+              minute: 'hh:mm',
+              hour: 'hh:mm',
+              day: 'dd. D',
+              week: 'DD/MM',
+              month: 'YYYY-MM'
+            }
           }
-          expandMode = !expandMode
-        }
-    })
-    $('.short').on('click', function() {
-      if (expandMode) {
-        $(this).hide()
-        $(this).parents('.extra').children('.full').show()
+        }]
       }
-    })
-    $('.full').on('click', function() {
-      if (expandMode) {
-        $(this).hide()
-        $(this).parents('.extra').children('.short').show()
-      }
-    })
-
-    // Bind click handler for aggregations filtering
-    $('.filter').on('click', function(el) {
-      var filters = $lsGet('filters')
-      if (!filters) filters = { term: {} }
-      filters.term[$(this).attr('key')] = $(this).attr('name')
-      $lsSet('filters', filters)
-      refresh()
-    })
-
-    // Bind click handler to reset filters
-    $('.reset').on('click', function(el) {
-      var filters = $lsGet('filters')
-      //if (!filters) filters = { term: {} }
-      delete filters.term[$(this).attr('key')]
-      $lsSet('filters', filters)
-      refresh()
-    })
+    }
+  });
 }
+
+function transform(results, query) {
+  var hits = results.hits.hits
+
+  for (var i = hits.length - 1; i >= 0; i--) {
+    var item = hits[i]._source
+
+    // Inject fromNow
+    results.hits.hits[i].fromNow = fromNow(item)
+
+    // Sanitize all source fields
+    if (typeof(sanitizeText) === 'function') {
+      for (var key in item) {
+        results.hits.hits[i]._source[key] = sanitizeText(item[key]+"")
+      }
+    }
+
+    // Sanitize all message
+    message = hits[i]._source.message
+    if (message) {
+      if (typeof(sanitizeMessage) === 'function') {
+        message = sanitizeMessage(message)
+      }
+      results.hits.hits[i]._source.fullMessage = message
+      lines = message.split('<br>')
+      results.hits.hits[i]._source.shortMessage = lines[lines.length-2]
+
+      // Highlight query words
+      if (query != '*') {
+        query.split(' ').forEach(function(word) {
+          word = word.replace(/\*/g)
+          var wordRe = new RegExp(word, "gi");
+          message = message
+            .replace(wordRe, '<b style="color:#E91E63">'+word+'</b>')
+        })
+      }
+    }
+  }
+
+  // Translate/sanitize aggregations fields
+  aggregs = results.aggregations
+  for (var aggreg in aggregs) {
+
+    // Extract histogram
+    histogram = results.aggregations['histogram']
+    if (histogram) {
+      results.histogram = histogram
+      delete results.aggregations['histogram']
+    }
+
+    // Translate aggreg names
+    newAggreg = aggreg
+    buckets = aggregs[aggreg].buckets
+    newAggreg = aggreg
+    if (typeof(translateAggregName) === 'function') {
+      newAggreg = translateAggregName(aggreg)
+      aggregs[newAggreg] = {buckets: buckets}
+      if (aggreg != newAggreg) {
+        delete results.aggregations[aggreg]
+      }
+    }
+
+    if (!results.aggregations[newAggreg]) {
+      break
+    }
+
+    // Sanitize aggreg keys
+    if (typeof(sanitizeText) === 'function') {
+      for (var i = buckets.length - 1; i >= 0; i--) {
+        results.aggregations[newAggreg].buckets[i].key = sanitizeText(buckets[i].key+"")
+      }
+    }
+  }
+
+  return results
+}
+
+function bindKeypress() {
+  $('.message').css('cursor', 'all-scroll')
+
+  // Toggle message on click - lock/unlock toggle by pressing 'e'
+  $('.short').on('click', function() {
+    if (expandMode) {
+      $(this).hide()
+      $(this).parents('.extra').children('.full').show()
+    }
+  })
+  $('.full').on('click', function() {
+    if (expandMode) {
+      $(this).hide()
+      $(this).parents('.extra').children('.short').show()
+    }
+  })
+
+  // Bind click handler for aggregations filtering
+  $('.filter').on('click', function(el) {
+    var filters = $lsGet('filters')
+    if (!filters) filters = { term: {} }
+    filters.term[$(this).attr('key')] = $(this).attr('name')
+    $lsSet('filters', filters)
+    refresh()
+  })
+
+  // Bind click handler to reset filters
+  $('.reset').on('click', function(el) {
+    var filters = $lsGet('filters')
+    //if (!filters) filters = { term: {} }
+    delete filters.term[$(this).attr('key')]
+    $lsSet('filters', filters)
+    refresh()
+  })
+}
+
+var expandMode = true
+
+$('body').bind('keypress', function(event) {
+    var key = event.which || event.keyCode // keyCode detection
+    //var ctrl = event.ctrlKey ? event.ctrlKey : ((key === 17) ? true : false) // ctrl detection
+    console.log('k', key)
+    //console.log('c', event.ctrlKey)
+
+    if (key == 102) { // f
+      $('#param-query').focus()
+    }
+    if (key == 101) { // e
+      if (expandMode) {
+        $('.message').css('cursor', '')
+      } else {
+        $('.message').css('cursor', 'all-scroll')
+      }
+      expandMode = !expandMode
+    }
+    if (event.ctrlKey && key == 10) { // ctrl+enter
+      search()
+    }
+})
 
 function error(error) {
   $('#feed').html(`

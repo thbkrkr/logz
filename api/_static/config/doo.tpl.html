@@ -12,7 +12,7 @@
           <%= hit.status %>
         </a>
         <!-- summary/title -->
-        <a class="long-cmd" title="">
+        <a class="long-cmd" title="<%= hit.long_cmd %>">
           <%
             l = hit['long_cmd'].length;
           %>
@@ -33,10 +33,10 @@
       } %>
       <div class="extra images">
         <div class="ui short message">
-          <%= hit.message %>
+          <%= hit.shortMessage %>
         </div>
         <div class="ui full message" style="display:none">
-          <%= hit.fullMessage %>
+          <%= hit.message %>
         </div>
       </div>
     </div>
@@ -45,14 +45,23 @@
 
 </script> <script>
 
-function sanitize(text) {
+function queryFrom() {
+  since = $param('since') || $lsGet('since')
+  return moment().subtract(since, 'seconds').unix()
+}
+
+function fromNow(obj) {
+  return $fromNow(obj.timestamp)
+}
+
+function sanitizeText(text) {
   return text
     .replace(/\[[0-9]*\]:/, '')
     .replace(/\/[0-9a-z]*$/, '')
     .replace(/docker\//, '')
 }
 
-function cleanMessage(message, query) {
+function sanitizeMessage(message) {
   message = message
     .replace(/\[#[0-9]*\[[0-9]*minfo#[0-9]*\[0m\]/g, '')
     .replace(/|#[0-9]*\[[0-9]*;[0-9]*m/g, '')
@@ -66,47 +75,7 @@ function cleanMessage(message, query) {
       .replace(/level=error/, 'level=<span style="color:#F44336">error</span>')
   }
 
-  // Highlight query words
-  if (query != '*') {
-    query.split(' ').forEach(function(word) {
-      word = word.replace(/\*/g)
-      var wordRe = new RegExp(word, "gi");
-      message = message
-        .replace(wordRe, '<b style="color:#E91E63">'+word+'</b>')
-    })
-  }
-
   return message
-}
-
-function transform(results, paramQuery) {
-  var hits = results.hits.hits
-
-  // Inject fromNow using the _source.timestamp field
-  for (var i = hits.length - 1; i >= 0; i--) {
-    results.hits.hits[i].fromNow = $fromNow(hits[i]._source.timestamp)
-
-    // Clean tags FIXME!
-    if (hits[i]._source.tag) {
-      results.hits.hits[i]._source.tag = sanitize(hits[i]._source.tag)
-    }
-
-    if (hits[i]._source.message) {
-      message = cleanMessage(hits[i]._source.message, paramQuery)
-      results.hits.hits[i]._source.fullMessage = message
-      lines = message.split('<br>')
-      results.hits.hits[i]._source.message = lines[lines.length-2]
-    }
-  }
-
-  // Clean aggreation buckets key
-  for (var aggregationKey in results.aggregations) {
-    var buckets = results.aggregations[aggregationKey].buckets
-    for (var i = buckets.length - 1; i >= 0; i--) {
-      results.aggregations[aggregationKey].buckets[i].key = sanitize(buckets[i].key)
-    }
-  }
-  return results
 }
 
 </script>

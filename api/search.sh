@@ -2,9 +2,9 @@
 
 IN="$(cat /dev/stdin)"
 
-_() { jq -r .$1 <<< $IN; }
+g() { jq -r .$1 <<< $IN; }
 
 curl -s \
   -u "${LOGZ_USERNAME:-"yo"}:${LOGZ_PASSWORD:-"lo"}" \
-  -XGET "$LOGZ_URL/$(jq -r .index <<< $IN)/_search" \
-  -d "$(jq .request <<< $IN)"
+  -XGET "$LOGZ_URL/$(g index)/_search" \
+  -d "$(g request)"
