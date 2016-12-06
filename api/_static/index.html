@@ -304,10 +304,11 @@ function transform(results, query) {
   for (var aggreg in aggregs) {
 
     // Extract histogram
-    histogram = results.aggregations['histogram']
-    if (histogram) {
+    if (aggreg == 'histogram') {
+      histogram = results.aggregations['histogram']
       results.histogram = histogram
       delete results.aggregations['histogram']
+      continue
     }
 
     // Translate aggreg names

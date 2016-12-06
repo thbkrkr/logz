@@ -10,14 +10,13 @@
       "bool": {
         "must": [
           { "range" : { "timestamp" : { "from" :  "{{from}}" }}},
-          { "term": { "program": "docker" }},
           { "query_string": { "query": "{{query}}" }}
         ]
       }
     },
     "aggs": {
       "tags":  { "terms": { "field": "tag" }},
-      "hosts": { "terms": { "field": "source" }}
+      "host": { "terms": { "field": "source" }}
     },
     "sort": { "timestamp": { "order": "desc" }}
   }

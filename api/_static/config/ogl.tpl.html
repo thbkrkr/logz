@@ -26,4 +26,14 @@
     </div>
   </div>
 <% } %>
+</script> <script>
+
+function queryFrom() {
+  return moment().subtract($lsGet('since'), 'seconds').format('YYYY-MM-DD HH:mm:ss.SSS')
+}
+
+function fromNow(obj) {
+  return moment(obj.timestamp).fromNow()
+}
+
 </script>

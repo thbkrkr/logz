@@ -46,8 +46,7 @@
 </script> <script>
 
 function queryFrom() {
-  since = $param('since') || $lsGet('since')
-  return moment().subtract(since, 'seconds').unix()
+  return moment().subtract($lsGet('since'), 'seconds').unix()
 }
 
 function fromNow(obj) {
