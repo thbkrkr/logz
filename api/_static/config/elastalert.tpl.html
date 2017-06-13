@@ -1,0 +1,38 @@
+<script type="text/html" id="elastalert_tpl">
+  <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+    <div class="event">
+      <div class="content">
+        <div class="summary">
+          <a class="ui pink horizontal label" style="min-width:60px; text-align: center">
+            <%= obj.hits.hits[i]._source.match_body.source %>
+          </a>
+          <a class="ui purple horizontal label" style="min-width:60px; text-align: center">
+            <%= obj.hits.hits[i]._source.match_body.tag %>
+          </a>
+          <!-- summary/fromNow -->
+          <div class="date" title="<%= obj.hits.hits[i]['@timestamp'] %>">
+            <%= obj.hits.hits[i].fromNow %>
+          </div>
+        </div>
+        <div class="extra images">
+          <div class="ui short message">
+            <%= obj.hits.hits[i]._source.match_body.tag %> <br>
+            <%= obj.hits.hits[i]._source.match_body.message %> <br>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</script> <script>
+
+dateFormat = 'YYYY-MM-DDTHH:mm:ss.SSSZZ'
+
+function queryFrom() {
+  return moment().subtract($lsGet('since'), 'seconds').format(dateFormat)
+}
+
+function fromNow(obj) {
+  return moment(obj['@timestamp'], dateFormat).fromNow()
+}
+
+</script>

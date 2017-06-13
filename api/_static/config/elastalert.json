@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    "elastalert_status/elastalert"
+  ],
+  "request": {
+    "from" : 0, "size" : 10,
+    "query": {
+      "bool": {
+        "must": [
+          { "range" : { "@timestamp" : { "from" :  "{{from}}" }}},
+          { "query_string": { "query": "{{query}}" }}
+        ]
+      }
+    },
+    "aggs": {
+      "source": { "terms": { "field": "source" }},
+      "tag": { "terms": { "field": "match_body.tag" }},
+      "histogram":  { "date_histogram": { "field":"@timestamp","interval":"{{interval}}" }}
+    },
+    "sort": { "@timestamp": { "order": "desc" }}
+  }
+}
