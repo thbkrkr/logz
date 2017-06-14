@@ -1,3 +1,9 @@
+<style>
+.ui.message {
+  font-family: ubuntu mono;
+}
+</style>
+
 <script type="text/html" id="doo_tpl">
 <% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
   <% hit = obj.hits.hits[i]._source;  %>
@@ -28,15 +34,15 @@
 
       <!-- Short and full message -->
       <% if (hit.message == '') {
-        hit.message = '<i>(empty)</i>';
-        hit.fullMessage = '<i>(empty)</i>'
+        hit.lastline = '<i>(empty)</i>';
+        hit.message = '<i>(empty)</i>'
       } %>
       <div class="extra images">
         <div class="ui short message">
-          <%= hit.shortMessage %>
+          <%= hit.lastline %>
         </div>
         <div class="ui full message" style="display:none">
-          <%= hit.message %>
+          <%= decode(hit.message).replace(/\n/g, '<br>') %>
         </div>
       </div>
     </div>
@@ -44,6 +50,15 @@
 <% } %>
 
 </script> <script>
+
+function decode(str) {
+  console.log(str)
+  try {
+    return atob(str)
+  } catch (e) {
+    return str
+  }
+}
 
 function queryFrom() {
   return moment().subtract($lsGet('since'), 'seconds').unix()
