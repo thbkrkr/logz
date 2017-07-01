@@ -12,23 +12,34 @@
 
       <!-- Summary/status -->
       <div class="summary">
+        <% if (!hit.Html) {
+          if (hit.Status == 'OK') {
+            color = 'green'
+          } else {
+            color = 'red'
+          }
+          hit.Html = `<a class="ui `+color+` tiny horizontal label">`+hit.Status+`</a>`
+            + hit.Name
+        } %>
         <%= hit.Html %>
         from
         <a><%= hit.Node %></a>
         <!-- summary/fromNow -->
-        <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+        <div class="date" title="<%= obj.hits.hits[i].Timestamp %>">
           <%= obj.hits.hits[i].fromNow %>
         </div>
       </div>
 
       <!-- Short and full message -->
       <% if (hit.Output == '') {
-        hit.LastLine = '<i>(empty)</i>';
         hit.Output = '<i>(empty)</i>'
+      } %>
+      <% if (!hit.LastLine) {
+        hit.LastLine = hit.Output.split('<br>')[0];
       } %>
       <div class="extra images">
         <div class="ui short message">
-          <%= hit.LastLine %>
+          <%= hit.LastLine.substring(0, 100) %>
         </div>
         <div class="ui full message" style="display:none">
           <%= decode(hit.Output).replace(/\n/g, '<br>') %>
