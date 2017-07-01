@@ -1,0 +1,84 @@
+<style>
+.ui.message {
+  font-family: ubuntu mono;
+}
+</style>
+
+<script type="text/html" id="events_tpl">
+<% for ( var i = 0; i < obj.hits.hits.length; i++ )  { %>
+  <% hit = obj.hits.hits[i]._source;  %>
+  <div class="event">
+    <div class="content">
+
+      <!-- Summary/status -->
+      <div class="summary">
+        <%= hit.Html %>
+        from
+        <a><%= hit.Node %></a>
+        <!-- summary/fromNow -->
+        <div class="date" title="<%= obj.hits.hits[i].timestamp %>">
+          <%= obj.hits.hits[i].fromNow %>
+        </div>
+      </div>
+
+      <!-- Short and full message -->
+      <% if (hit.Output == '') {
+        hit.LastLine = '<i>(empty)</i>';
+        hit.Output = '<i>(empty)</i>'
+      } %>
+      <div class="extra images">
+        <div class="ui short message">
+          <%= hit.LastLine %>
+        </div>
+        <div class="ui full message" style="display:none">
+          <%= decode(hit.Output).replace(/\n/g, '<br>') %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+</script> <script>
+
+function decode(str) {
+  console.log(str)
+  try {
+    return atob(str)
+  } catch (e) {
+    return str
+  }
+}
+
+function queryFrom() {
+  return moment().subtract($lsGet('since'), 'seconds').unix()
+}
+
+function fromNow(obj) {
+  return $fromNow(obj.Timestamp)
+}
+
+function sanitizeText(text) {
+  return text
+    .replace(/\[[0-9]*\]:/, '')
+    .replace(/\/[0-9a-z]*$/, '')
+    .replace(/docker\//, '')
+}
+
+function sanitizeMessage(message) {
+  message = message
+    .replace(/\[#[0-9]*\[[0-9]*minfo#[0-9]*\[0m\]/g, '')
+    .replace(/|#[0-9]*\[[0-9]*;[0-9]*m/g, '')
+    .replace(/|#[0-9]*\[0m|/g, '')
+
+  if (message.indexOf('level=') != -1) {
+    message = message
+      .replace(/time="[0-9\-:TZ]*"/, '')
+      .replace(/level=info/, 'level=<span style="color:#009688">info</span>')
+      .replace(/level=warning/, 'level=<span style="color:#FF9800">warning</span>')
+      .replace(/level=error/, 'level=<span style="color:#F44336">error</span>')
+  }
+
+  return message
+}
+
+</script>

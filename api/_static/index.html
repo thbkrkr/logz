@@ -379,8 +379,6 @@ var expandMode = true
 $('body').bind('keypress', function(event) {
     var key = event.which || event.keyCode // keyCode detection
     //var ctrl = event.ctrlKey ? event.ctrlKey : ((key === 17) ? true : false) // ctrl detection
-    console.log('k', key)
-    //console.log('c', event.ctrlKey)
 
     if (key == 102) { // f
       $('#param-query').focus()
